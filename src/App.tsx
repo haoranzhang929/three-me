@@ -14,6 +14,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./App.css";
 
 const useHelper = false;
+const moveSpeed = 3;
+const mapSize = 512;
 
 let frameId: number | null;
 
@@ -21,6 +23,7 @@ let frameId: number | null;
 // For details of how to setup each component
 // Please check ./three/index.ts file
 const scene = setupScene(ColorPalette.NIGHT_OWL_BLUE);
+scene.fog = new THREE.Fog(ColorPalette.NIGHT_OWL_BLUE, 1, 800);
 const camera = setupCamera(window.innerWidth, window.innerHeight);
 camera.position.z = 100;
 camera.position.y = 0;
@@ -30,24 +33,21 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 // Lights
-const ambientLight = new THREE.AmbientLight(ColorPalette.LIGHT_CREAM, 0.35);
-ambientLight.position.setY(50);
+const ambientLight = new THREE.AmbientLight(ColorPalette.LIGHT_CREAM, 0.5);
+ambientLight.position.set(0, 50, 0);
 
 const hemisphereLight = new THREE.HemisphereLight(
   ColorPalette.LIGHT_CREAM,
   ColorPalette.BLACK,
   0.95
 );
-hemisphereLight.position.setY(100);
-hemisphereLight.position.setZ(100);
+hemisphereLight.position.set(0, 100, 100);
 
 const directionalLight = new THREE.DirectionalLight(ColorPalette.LIGHT_CREAM, 0.5);
 directionalLight.castShadow = true;
-directionalLight.position.setY(100);
-directionalLight.position.setZ(100);
+directionalLight.position.set(-100, 100, -100);
 // Set up shadow properties for the light
-directionalLight.shadow.mapSize.width = 1024; // default
-directionalLight.shadow.mapSize.height = 1024; // default
+directionalLight.shadow.mapSize.set(mapSize, mapSize);
 directionalLight.shadow.camera.near = 0.5; // default
 directionalLight.shadow.camera.far = 500; // default
 
@@ -55,6 +55,14 @@ scene.add(ambientLight, hemisphereLight, directionalLight);
 
 // OrbitControls
 const orbitControls = new OrbitControls(camera, renderer.domElement);
+orbitControls.enablePan = false;
+orbitControls.maxDistance = 150;
+orbitControls.minDistance = 50;
+orbitControls.rotateSpeed = 0.6;
+orbitControls.zoomSpeed = 0.8;
+orbitControls.maxPolarAngle = Math.PI / 1.5;
+orbitControls.minAzimuthAngle = -Math.PI / 2;
+orbitControls.maxAzimuthAngle = Math.PI / 2;
 
 let me: THREE.Object3D | undefined;
 (async () => {
@@ -69,10 +77,19 @@ let me: THREE.Object3D | undefined;
   scene.add(me);
   camera.lookAt(me.position);
   orbitControls.update();
+
+  // SkeletonHelper
+  if (useHelper) {
+    const skeletonHelper = new THREE.SkeletonHelper(me);
+    scene.add(skeletonHelper);
+  }
 })();
 
 // Terrain
-const numSegments = 20;
+const planeSize = 4000;
+const crossArea = 800;
+const moveBackSize = -(planeSize / 2) + 2 * crossArea - planeSize;
+const numSegments = 50;
 const getNoise = (x: number, y: number, z: number, t: number) =>
   new SimplexNoise().noise4d(x, y, z, t);
 const planeMaterial = new THREE.MeshPhongMaterial({
@@ -80,7 +97,7 @@ const planeMaterial = new THREE.MeshPhongMaterial({
   flatShading: true,
   side: THREE.DoubleSide
 });
-const planeGeometry = new THREE.PlaneGeometry(1500, 1500, numSegments, numSegments);
+const planeGeometry = new THREE.PlaneGeometry(planeSize / 1.5, planeSize, numSegments, numSegments);
 for (let i = 0; i < planeGeometry.vertices.length; i++) {
   const v = planeGeometry.vertices[i];
   v.z = getNoise(v.x * 0.01, v.y * 0.01, v.z * 0.01, 0) * 60;
@@ -91,9 +108,14 @@ planeGeometry.verticesNeedUpdate = true;
 const terrain = new THREE.Mesh(planeGeometry, planeMaterial);
 terrain.name = "Terrain";
 terrain.rotateX(-Math.PI / 2);
-terrain.position.setY(-60);
+terrain.position.setZ(-(planeSize / 2) + crossArea);
+terrain.position.setY(-75);
 terrain.receiveShadow = true;
-scene.add(terrain);
+const terrain2 = terrain.clone();
+terrain2.name = "Terrain 2";
+terrain2.position.setZ(moveBackSize);
+terrain2.position.setY(-76);
+scene.add(terrain, terrain2);
 
 const renderScene = () => renderer.render(scene, camera);
 
@@ -108,12 +130,6 @@ if (useHelper) {
   // AxesHelper
   const axesHelper = new THREE.AxesHelper(100);
   scene.add(axesHelper);
-
-  // SkeletonHelper
-  if (me) {
-    const skeletonHelper = new THREE.SkeletonHelper(me);
-    scene.add(skeletonHelper);
-  }
 }
 
 const App = () => {
@@ -129,7 +145,17 @@ const App = () => {
   const animate = () => {
     frameId = window.requestAnimationFrame(animate);
     orbitControls.update();
-    me && me.rotateY(0.01);
+    terrain.position.z += moveSpeed;
+    terrain2.position.z += moveSpeed;
+
+    if (terrain.position.z > planeSize / 2) {
+      console.log(`terrain move back ${moveBackSize}`);
+      terrain.position.z = moveBackSize;
+    }
+    if (terrain2.position.z > planeSize / 2) {
+      console.log(`terrain2 move back ${moveBackSize}`);
+      terrain2.position.z = moveBackSize;
+    }
     renderScene();
   };
 
