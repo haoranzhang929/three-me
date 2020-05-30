@@ -12,5 +12,6 @@ export const setupCamera = (windowWidth: number, windowHeight: number) =>
 export const setupRenderer = (windowWidth: number, windowHeight: number) => {
   const renderer = new WebGLRenderer({ antialias: true });
   renderer.setSize(windowWidth, windowHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
   return renderer;
 };
