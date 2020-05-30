@@ -13,6 +13,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import "./App.css";
 
+const useHelper = false;
+
 let frameId: number | null;
 
 // Setup Scene, Camera & Renderer for Three.js
@@ -51,16 +53,6 @@ directionalLight.shadow.camera.far = 500; // default
 
 scene.add(ambientLight, hemisphereLight, directionalLight);
 
-// Lights Helper
-const hemisphereLightHelper = new THREE.HemisphereLightHelper(hemisphereLight, 5);
-scene.add(hemisphereLightHelper);
-const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight);
-scene.add(directionalLightHelper);
-
-// AxesHelper
-const axesHelper = new THREE.AxesHelper(100);
-scene.add(axesHelper);
-
 // OrbitControls
 const orbitControls = new OrbitControls(camera, renderer.domElement);
 
@@ -77,10 +69,6 @@ let me: THREE.Object3D | undefined;
   scene.add(me);
   camera.lookAt(me.position);
   orbitControls.update();
-
-  // SkeletonHelper
-  const skeletonHelper = new THREE.SkeletonHelper(me);
-  scene.add(skeletonHelper);
 })();
 
 // Terrain
@@ -108,6 +96,25 @@ terrain.receiveShadow = true;
 scene.add(terrain);
 
 const renderScene = () => renderer.render(scene, camera);
+
+// Helpers
+if (useHelper) {
+  // Lights Helper
+  const hemisphereLightHelper = new THREE.HemisphereLightHelper(hemisphereLight, 5);
+  scene.add(hemisphereLightHelper);
+  const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight);
+  scene.add(directionalLightHelper);
+
+  // AxesHelper
+  const axesHelper = new THREE.AxesHelper(100);
+  scene.add(axesHelper);
+
+  // SkeletonHelper
+  if (me) {
+    const skeletonHelper = new THREE.SkeletonHelper(me);
+    scene.add(skeletonHelper);
+  }
+}
 
 const App = () => {
   const divRef = useRef<HTMLDivElement>(null);
