@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "author": "Haoran Zhang",
+  "homepage": "https://haoranzhang929.github.io/three-me/",
   "dependencies": {
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
