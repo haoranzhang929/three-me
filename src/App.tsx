@@ -105,7 +105,8 @@ for (let i = 0; i < planeGeometry.vertices.length; i++) {
   v.z += getNoise(v.x * 0.1, v.y * 0.125, v.z * 0.125, 0);
 }
 planeGeometry.verticesNeedUpdate = true;
-const terrain = new THREE.Mesh(planeGeometry, planeMaterial);
+const bufferPlaneGeometry = new THREE.BufferGeometry().fromGeometry(planeGeometry);
+const terrain = new THREE.Mesh(bufferPlaneGeometry, planeMaterial);
 terrain.name = "Terrain";
 terrain.rotateX(-Math.PI / 2);
 terrain.position.setZ(-(planeSize / 2) + crossArea);
